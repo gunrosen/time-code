@@ -6,8 +6,13 @@ Trang web hiển thị time-code lớn để **nhiều camera cùng quay vào m�
 
 1. Mở trang (GitHub Pages) trên một màn hình ≥ 60Hz: laptop, tablet, TV hoặc điện thoại.
 2. **Chạm/click vào màn hình một lần** (hoặc bấm phím bất kỳ). Trang sẽ vào toàn màn hình và giữ màn hình luôn sáng. Trình duyệt bắt buộc phải có một thao tác của người dùng mới cho phép hai việc này. Nếu thoát toàn màn hình, chạm lại một lần là trang vào lại. Dòng trạng thái hiện `● giữ sáng` khi màn hình đang được giữ sáng, và hiện `chạm để toàn màn hình` khi chưa ở chế độ toàn màn hình. iPhone không hỗ trợ toàn màn hình cho trang web.
-3. Bắt đầu quay cả 3 camera, rồi chĩa từng camera (hoặc cả 3 cùng lúc) vào màn hình vài giây.
-4. Nhìn dòng trạng thái góc trên: nó phải hiện `60 Hz` (hoặc cao hơn) và **không chuyển đỏ** trong lúc quay. Màu đỏ nghĩa là trình duyệt vừa rớt frame; khi đó nên quay lại đoạn mốc.
+3. **Bật quay cả 3 camera trước.**
+4. Người làm quay đầu/người về phía màn hình sao cho **cả 3 camera cùng thấy rõ màn hình**, rồi **giữ 1 giây** để `START` task đầu tiên (xem [Đánh dấu task](#đánh-dấu-task-startstop)). Giữ tay trên **vùng số giờ to hoặc dải màu**, đừng che QR và thước quét.
+5. **Nhìn màn hình thêm khoảng 2 giây** sau khi dải chuyển xanh, rồi mới bắt đầu làm task. Đoạn này vừa là mốc đồng bộ 3 camera, vừa là mốc bắt đầu task đầu tiên. Không cần một bước sync riêng.
+6. Các task sau: giữ 1 giây để `STOP`/`START` và liếc camera về màn hình như bình thường. Mỗi lần liếc cũng là thêm một điểm đồng bộ.
+7. Nhìn dòng trạng thái góc trên: nó phải hiện `60 Hz` (hoặc cao hơn) và **không chuyển đỏ** trong lúc camera đang nhìn màn hình. Màu đỏ nghĩa là trình duyệt vừa rớt frame; khi đó nên nhìn lại màn hình thêm vài giây.
+
+> **Sync và START không lẫn nhau:** cùng một frame QR mang cả **time-code đang chạy** (`slotStartEpochMs` + vạch vàng, dùng để đồng bộ) lẫn **thời điểm bấm** (`eventMs`, dùng để cắt task). Đồng bộ luôn đọc time-code đang chạy, không dùng `eventMs`.
 
 ## Màn hình hiển thị gì
 
@@ -59,6 +64,8 @@ Làm cho từng video:
    ```
 
 Độ lệch giữa hai video là hiệu `start_video` của chúng. Nên đọc 3–5 frame ở các slot khác nhau rồi lấy trung vị để giảm sai số.
+
+Frame dùng để đồng bộ thường là đoạn nhìn màn hình lúc `START` task đầu tiên. Các lần liếc màn hình sau đó (mỗi lần `STOP`/`START`) cho thêm điểm đồng bộ rải khắp video, giúp kiểm tra và bù nếu timestamp của file bị nhảy hoặc camera chạy lệch fps (ví dụ 29.97 thay vì 30).
 
 ### Mẹo quay
 - Đặt màn hình **gần giữa khung hình** của mỗi camera. Cảm biến rolling shutter đọc ảnh từ trên xuống, nên đặt ở cùng độ cao trong khung giúp sai lệch giữa các camera như nhau.
