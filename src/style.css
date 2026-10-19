@@ -4,6 +4,10 @@
   --fg: #fff;
   --dim: #9a9a9a;
   --warn: #ff5a4f;
+  --start: #00d26a;
+  --stop: #ff2d2d;
+  --idle-bg: #222;
+  --idle-fg: #b5b5b5;
   --gap: 2vmin;
   --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Roboto Mono', 'DejaVu Sans Mono', monospace;
 }
@@ -20,6 +24,11 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--mono);
+  /* The whole screen is a press-and-hold target. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
 }
 
 #app {
@@ -31,9 +40,10 @@ body {
   padding: max(var(--gap), env(safe-area-inset-top)) max(var(--gap), env(safe-area-inset-right))
     max(var(--gap), env(safe-area-inset-bottom)) max(var(--gap), env(safe-area-inset-left));
   grid-template-columns: minmax(0, 1fr) var(--qr);
-  grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr) minmax(0, 1fr);
   grid-template-areas:
     'meta meta'
+    'tag tag'
     'time time'
     'sweep qr'
     'strip qr';
@@ -56,9 +66,48 @@ body {
   color: var(--warn);
 }
 
+#tag {
+  grid-area: tag;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3em 0.5em;
+  border-radius: 1vmin;
+  background: var(--idle-bg);
+  color: var(--idle-fg);
+  font-size: min(5vw, 7dvh);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+#tag[data-state='START'] {
+  background: var(--start);
+  color: #000;
+}
+
+#tag[data-state='STOP'] {
+  background: var(--stop);
+  color: #fff;
+}
+
+#tag-progress {
+  position: absolute;
+  inset: 0;
+  background: rgb(255 255 255 / 0.4);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+#tag-label {
+  position: relative;
+}
+
 #time {
   grid-area: time;
-  font-size: min(15vw, 25dvh);
+  font-size: min(15vw, 20dvh);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -97,12 +146,16 @@ body {
   #app {
     --qr: min(82vw, 40dvh);
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 0.6fr) var(--qr) minmax(0, 0.5fr);
-    grid-template-areas: 'meta' 'time' 'sweep' 'qr' 'strip';
+    grid-template-rows: auto auto auto minmax(0, 0.6fr) var(--qr) minmax(0, 0.5fr);
+    grid-template-areas: 'meta' 'tag' 'time' 'sweep' 'qr' 'strip';
   }
 
   #time {
     font-size: 15vw;
+  }
+
+  #tag {
+    font-size: 6vw;
   }
 
   #status {

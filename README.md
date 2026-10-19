@@ -13,14 +13,30 @@ Trang web hiển thị time-code lớn để **nhiều camera cùng quay vào m�
 
 | Phần tử | Đổi khi nào | Dùng để |
 |---|---|---|
+| Dải tag `START`/`STOP` (xanh lá/đỏ) | Khi nhấn giữ 1 giây | Đánh dấu task bắt đầu/kết thúc |
 | Số to `HH:MM:SS.d` | Mỗi 100ms (một *slot*) | Người đọc giờ của slot |
 | Thước quét 0–99ms (vạch vàng) | Mỗi lần màn hình làm tươi | Đọc mili-giây trong slot |
 | Dải 24 ô đen/trắng (mã Gray) | Mỗi slot | Máy đọc slot, chịu được frame bị nhòe |
-| QR | Mỗi slot | Máy đọc thời gian tuyệt đối của slot |
+| QR | Mỗi slot | Máy đọc thời gian tuyệt đối của slot và trạng thái tag |
 
 Giờ hiển thị là giờ của máy đang mở trang, theo múi giờ của trình duyệt.
 
 **Vì sao chia hai lớp:** camera để auto-exposure trong nhà thường phơi sáng khoảng 1/30s, tức mỗi frame video "chụp dính" 2–3 lần đổi hình của màn hình. Phần thô (số, Gray, QR) đứng yên trong 100ms, nên mỗi slot luôn có frame sạch. Phần mịn là vạch vàng chạy liên tục: khi phơi sáng dài, vạch nhòe thành một vệt, và **tâm vệt chính là thời điểm giữa lúc phơi sáng** của frame đó.
+
+## Đánh dấu task (START/STOP)
+
+Trong một video có nhiều task liên tiếp (ví dụ rửa thực phẩm rồi nấu ăn), dùng dải tag ngay dưới dòng ngày giờ:
+
+1. **Nhấn giữ 1 giây ở bất kỳ đâu** trên màn hình (hoặc giữ phím `Space`). Thanh sáng chạy ngang dải cho biết đang giữ; thả tay sớm là huỷ.
+2. Giữ đủ 1 giây thì trạng thái đổi: `IDLE`/`STOP` → **`START`** (dải xanh lá), `START` → **`STOP`** (dải đỏ). Máy có hỗ trợ sẽ rung nhẹ.
+3. Dải giữ nguyên trạng thái đến lần nhấn giữ tiếp theo, kèm giờ đã bấm, ví dụ `▶ START · từ 12:30:05.2`.
+4. Sau khi bấm, người làm **liếc camera về màn hình** một lần. Không cần đúng lúc bấm: QR mang theo thời điểm bấm chính xác, nên liếc muộn vài giây vẫn đủ.
+
+- Thời điểm ghi lại là lúc **bắt đầu nhấn giữ**, không phải lúc giữ đủ 1 giây.
+- Bấm nhầm thì nhấn giữ thêm lần nữa để quay lại; khi xử lý chỉ cần bỏ cặp START/STOP quá ngắn.
+- Trạng thái được lưu trên trình duyệt đó, nên lỡ reload trang thì tag vẫn còn.
+
+**Cách AI đọc:** từ mỗi frame đọc được QR, lấy `STATE` và `eventMs`. Mỗi cặp (`STATE`, `eventMs`) khác nhau là một sự kiện, và `eventMs` chính là mốc START/STOP theo đồng hồ của màn hình (cùng đồng hồ đã dùng để đồng bộ video). Không cần biết frame nào nhìn thấy tag đầu tiên.
 
 ## Quy trình đồng bộ
 
@@ -51,10 +67,12 @@ Làm cho từng video:
 ## Spec cho máy đọc
 
 ### QR
-- Payload: `TC2;<slotStartEpochMs>;<tzOffsetMin>`.
+- Payload: `TC3:<slotStartEpochMs>:<tzOffsetMin>:<STATE>:<eventMs>`, ví dụ `TC3:1792390619900:420:START:1792390618496`.
   - `slotStartEpochMs`: Unix epoch (ms, UTC) của đầu slot, luôn là bội số của 100.
   - `tzOffsetMin`: độ lệch múi giờ của trình duyệt so với UTC, tính bằng phút, dương ở phía đông (UTC+07:00 = `420`).
-- QR version 2 (25×25 module), mức sửa lỗi M, quiet zone 4 module, module đen trên nền trắng.
+  - `STATE`: `IDLE` (chưa đánh dấu lần nào), `START` hoặc `STOP`.
+  - `eventMs`: Unix epoch (ms, UTC) lúc bắt đầu nhấn giữ để vào `STATE` hiện tại; bằng `0` khi `IDLE`.
+- QR version 3 (29×29 module), mức sửa lỗi M, quiet zone 4 module, module đen trên nền trắng. Payload chỉ dùng ký tự alphanumeric của QR (`0-9 A-Z : -`).
 
 ### Dải mã Gray (24 ô)
 ```

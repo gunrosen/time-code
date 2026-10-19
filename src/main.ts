@@ -1,10 +1,12 @@
 import { createClock, formatDate, formatOffset, formatTime, timeZoneName, toSnapshot } from './clock';
-import { STATUS_REFRESH_MS } from './config';
+import { HOLD_MS, HOLD_VIBRATE_MS, STATUS_REFRESH_MS } from './config';
 import { setupControls } from './controls';
+import { setupHold } from './hold';
 import { buildPayload, buildQr, drawQr } from './qr';
 import { createFrameStats } from './stats';
 import { drawStrip } from './strip';
 import { drawSweep } from './sweep';
+import { browserStorage, formatTagLabel, loadTag, nextTag, saveTag } from './tag';
 
 function byId<T extends HTMLElement>(id: string, type: { new (): T; prototype: T }): T {
   const el = document.getElementById(id);
@@ -22,6 +24,9 @@ const dateEl = byId('date', HTMLElement);
 const tzEl = byId('tz', HTMLElement);
 const timeEl = byId('time', HTMLElement);
 const statusEl = byId('status', HTMLElement);
+const tagEl = byId('tag', HTMLElement);
+const tagLabelEl = byId('tag-label', HTMLElement);
+const tagProgressEl = byId('tag-progress', HTMLElement);
 const sweepCtx = context(byId('sweep', HTMLCanvasElement));
 const stripCtx = context(byId('strip', HTMLCanvasElement));
 const qrCtx = context(byId('qr', HTMLCanvasElement));
@@ -33,6 +38,25 @@ const stats = createFrameStats();
 let lastSlot = Number.NaN;
 let coarseDirty = true;
 let lastStatusAt = Number.NEGATIVE_INFINITY;
+let lastProgress = -1;
+
+const storage = browserStorage();
+let tag = loadTag(storage);
+
+function renderTag(): void {
+  tagEl.dataset.state = tag.state;
+  tagLabelEl.textContent = formatTagLabel(tag);
+}
+
+const hold = setupHold(HOLD_MS, (startedAt) => {
+  tag = nextTag(tag, clock.epochAt(startedAt));
+  saveTag(tag, storage);
+  renderTag();
+  // Redraw the QR on the next frame instead of waiting for the slot to change.
+  coarseDirty = true;
+  if ('vibrate' in navigator) navigator.vibrate(HOLD_VIBRATE_MS);
+});
+renderTag();
 
 // Match canvas backing stores to device pixels so cell and module edges stay sharp.
 const resizer = new ResizeObserver(() => {
@@ -66,12 +90,18 @@ function frame(timestamp: number): void {
     dateEl.textContent = formatDate(snap);
     tzEl.textContent = `${formatOffset(snap.tzOffsetMin)} ${timeZoneName()}`;
     drawStrip(stripCtx, snap.slotOfDay);
-    drawQr(qrCtx, buildQr(buildPayload(snap.slotStartMs, snap.tzOffsetMin)));
+    drawQr(qrCtx, buildQr(buildPayload(snap.slotStartMs, snap.tzOffsetMin, tag)));
     lastSlot = snap.slot;
     coarseDirty = false;
   }
 
   drawSweep(sweepCtx, snap.phaseMs);
+
+  const progress = hold.progress(timestamp);
+  if (progress !== lastProgress) {
+    tagProgressEl.style.transform = `scaleX(${progress})`;
+    lastProgress = progress;
+  }
 
   if (timestamp - lastStatusAt >= STATUS_REFRESH_MS) {
     const parts = [`${stats.hz()} Hz`, `rớt ${stats.dropped()} frame`];
