@@ -4,7 +4,7 @@ Trang web hiển thị time-code lớn để **nhiều camera cùng quay vào m�
 
 ## Dùng nhanh
 
-1. Mở trang (GitHub Pages) trên một màn hình ≥ 60Hz: laptop, tablet, TV hoặc điện thoại.
+1. Mở trang (bản deploy trên Vercel) trên một màn hình ≥ 60Hz: laptop, tablet, TV hoặc điện thoại.
 2. **Chạm/click vào màn hình một lần** (hoặc bấm phím bất kỳ). Trang sẽ vào toàn màn hình và giữ màn hình luôn sáng. Trình duyệt bắt buộc phải có một thao tác của người dùng mới cho phép hai việc này. Nếu thoát toàn màn hình, chạm lại một lần là trang vào lại. Dòng trạng thái hiện `● giữ sáng` khi màn hình đang được giữ sáng, và hiện `chạm để toàn màn hình` khi chưa ở chế độ toàn màn hình. iPhone không hỗ trợ toàn màn hình cho trang web.
 3. **Bật quay cả 3 camera trước.**
 4. Người làm quay đầu/người về phía màn hình sao cho **cả 3 camera cùng thấy rõ màn hình**, rồi **giữ 1 giây** để `START` task đầu tiên (xem [Đánh dấu task](#đánh-dấu-task-startstop)). Giữ tay trên **vùng số giờ to hoặc dải màu**, đừng che QR và thước quét.
@@ -109,4 +109,4 @@ npm run build    # tsc + vite build → dist/
 
 Cấu hình (độ dài slot, số bit Gray, ngưỡng phát hiện frame rớt…) nằm trong `src/config.ts`.
 
-Deploy: push lên `main`, workflow `.github/workflows/deploy.yml` sẽ test, build và đăng lên GitHub Pages. Lần đầu cần vào **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+Deploy: Vercel tự build (`npm run build` → `dist/`) và deploy khi push lên `main`. Workflow `.github/workflows/ci.yml` chạy test và build cho mỗi lần push/PR, không deploy.
