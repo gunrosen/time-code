@@ -27,16 +27,18 @@ Giờ hiển thị là giờ của máy đang mở trang, theo múi giờ của 
 
 Trong một video có nhiều task liên tiếp (ví dụ rửa thực phẩm rồi nấu ăn), dùng dải tag ngay dưới dòng ngày giờ:
 
-1. **Nhấn giữ 1 giây ở bất kỳ đâu** trên màn hình (hoặc giữ phím `Space`). Thanh sáng chạy ngang dải cho biết đang giữ; thả tay sớm là huỷ.
-2. Giữ đủ 1 giây thì trạng thái đổi: `IDLE`/`STOP` → **`START`** (dải xanh lá), `START` → **`STOP`** (dải đỏ). Máy có hỗ trợ sẽ rung nhẹ.
-3. Dải giữ nguyên trạng thái đến lần nhấn giữ tiếp theo, kèm giờ đã bấm, ví dụ `▶ START · từ 12:30:05.2`.
+1. **Giữ 1 giây ở bất kỳ đâu** trên màn hình (hoặc giữ phím `Space`). Thanh sáng chạy ngang dải; thả tay trước 1 giây là huỷ.
+2. Giữ đủ 1 giây là trạng thái **đổi ngay** (không cần thả tay), máy có hỗ trợ sẽ rung nhẹ: `IDLE`/`STOP` → **`START`** (dải xanh lá), `START` → **`STOP`** (dải đỏ).
+3. Dải giữ nguyên trạng thái đến lần giữ tiếp theo, kèm giờ đã bấm, ví dụ `▶ START lúc 12:30:05.2`.
 4. Sau khi bấm, người làm **liếc camera về màn hình** một lần. Không cần đúng lúc bấm: QR mang theo thời điểm bấm chính xác, nên liếc muộn vài giây vẫn đủ.
 
-- Thời điểm ghi lại là lúc **bắt đầu nhấn giữ**, không phải lúc giữ đủ 1 giây.
-- Bấm nhầm thì nhấn giữ thêm lần nữa để quay lại; khi xử lý chỉ cần bỏ cặp START/STOP quá ngắn.
+**Bắt đầu session quay mới:** chạm nút **`↺ Session mới`** ở góc trên bên phải, nút đổi thành `Chạm lần nữa để xác nhận`; chạm thêm lần nữa trong 3 giây thì dải về `IDLE`. Không chạm lần hai thì nút tự trở lại như cũ. Nút chỉ hiện khi dải không ở `IDLE`, và giữ trên nút không làm đổi START/STOP.
+
+- Thời điểm START/STOP là lúc **bắt đầu giữ**, không phải lúc đủ 1 giây. Thời điểm về `IDLE` là lúc chạm xác nhận.
+- Bấm nhầm thì giữ thêm lần nữa để quay lại; khi xử lý chỉ cần bỏ cặp START/STOP quá ngắn.
 - Trạng thái được lưu trên trình duyệt đó, nên lỡ reload trang thì tag vẫn còn.
 
-**Cách AI đọc:** từ mỗi frame đọc được QR, lấy `STATE` và `eventMs`. Mỗi cặp (`STATE`, `eventMs`) khác nhau là một sự kiện, và `eventMs` chính là mốc START/STOP theo đồng hồ của màn hình (cùng đồng hồ đã dùng để đồng bộ video). Không cần biết frame nào nhìn thấy tag đầu tiên.
+**Cách AI đọc:** từ mỗi frame đọc được QR, lấy `STATE` và `eventMs`. Mỗi cặp (`STATE`, `eventMs`) khác nhau là một sự kiện, và `eventMs` chính là mốc START/STOP theo đồng hồ của màn hình (cùng đồng hồ đã dùng để đồng bộ video). Không cần biết frame nào nhìn thấy tag đầu tiên. `IDLE` với `eventMs` khác 0 là mốc **bắt đầu session mới**; nếu trước đó đang `START` thì coi như task đó kết thúc tại mốc này.
 
 ## Quy trình đồng bộ
 
@@ -71,7 +73,7 @@ Làm cho từng video:
   - `slotStartEpochMs`: Unix epoch (ms, UTC) của đầu slot, luôn là bội số của 100.
   - `tzOffsetMin`: độ lệch múi giờ của trình duyệt so với UTC, tính bằng phút, dương ở phía đông (UTC+07:00 = `420`).
   - `STATE`: `IDLE` (chưa đánh dấu lần nào), `START` hoặc `STOP`.
-  - `eventMs`: Unix epoch (ms, UTC) lúc bắt đầu nhấn giữ để vào `STATE` hiện tại; bằng `0` khi `IDLE`.
+  - `eventMs`: Unix epoch (ms, UTC) lúc bắt đầu nhấn giữ để vào `STATE` hiện tại. Với `IDLE`: `0` nếu chưa từng đánh dấu trên trình duyệt này, khác `0` là lúc reset về session mới.
 - QR version 3 (29×29 module), mức sửa lỗi M, quiet zone 4 module, module đen trên nền trắng. Payload chỉ dùng ký tự alphanumeric của QR (`0-9 A-Z : -`).
 
 ### Dải mã Gray (24 ô)

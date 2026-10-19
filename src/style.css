@@ -8,6 +8,7 @@
   --stop: #ff2d2d;
   --idle-bg: #222;
   --idle-fg: #b5b5b5;
+  --confirm: #ffb300;
   --gap: 2vmin;
   --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Roboto Mono', 'DejaVu Sans Mono', monospace;
 }
@@ -52,6 +53,7 @@ body {
 #meta {
   grid-area: meta;
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 0.4em 1.5em;
   color: var(--dim);
@@ -64,6 +66,22 @@ body {
 
 #status.warn {
   color: var(--warn);
+}
+
+#reset {
+  padding: 0.5em 0.9em;
+  border: 1px solid var(--dim);
+  border-radius: 0.5em;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+#reset[data-armed='true'] {
+  border-color: var(--confirm);
+  background: var(--confirm);
+  color: #000;
 }
 
 #tag {
@@ -100,6 +118,7 @@ body {
   transform: scaleX(0);
   transform-origin: left;
 }
+
 
 #tag-label {
   position: relative;
@@ -155,7 +174,7 @@ body {
   }
 
   #tag {
-    font-size: 6vw;
+    font-size: 5vw;
   }
 
   #status {

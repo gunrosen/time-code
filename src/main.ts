@@ -1,12 +1,13 @@
 import { createClock, formatDate, formatOffset, formatTime, timeZoneName, toSnapshot } from './clock';
-import { HOLD_MS, HOLD_VIBRATE_MS, STATUS_REFRESH_MS } from './config';
+import { HOLD_MS, HOLD_VIBRATE_MS, RESET_CONFIRM_MS, STATUS_REFRESH_MS } from './config';
+import { bindConfirmButton } from './confirm';
 import { setupControls } from './controls';
-import { setupHold } from './hold';
+import { bindHoldInput, createHoldMachine } from './hold';
 import { buildPayload, buildQr, drawQr } from './qr';
 import { createFrameStats } from './stats';
 import { drawStrip } from './strip';
 import { drawSweep } from './sweep';
-import { browserStorage, formatTagLabel, loadTag, nextTag, saveTag } from './tag';
+import { browserStorage, formatTagLabel, loadTag, nextTag, resetTag, saveTag, type Tag } from './tag';
 
 function byId<T extends HTMLElement>(id: string, type: { new (): T; prototype: T }): T {
   const el = document.getElementById(id);
@@ -27,6 +28,7 @@ const statusEl = byId('status', HTMLElement);
 const tagEl = byId('tag', HTMLElement);
 const tagLabelEl = byId('tag-label', HTMLElement);
 const tagProgressEl = byId('tag-progress', HTMLElement);
+const resetButton = byId('reset', HTMLButtonElement);
 const sweepCtx = context(byId('sweep', HTMLCanvasElement));
 const stripCtx = context(byId('strip', HTMLCanvasElement));
 const qrCtx = context(byId('qr', HTMLCanvasElement));
@@ -46,16 +48,22 @@ let tag = loadTag(storage);
 function renderTag(): void {
   tagEl.dataset.state = tag.state;
   tagLabelEl.textContent = formatTagLabel(tag);
+  // Nothing to reset while already IDLE.
+  resetButton.hidden = tag.state === 'IDLE';
 }
 
-const hold = setupHold(HOLD_MS, (startedAt) => {
-  tag = nextTag(tag, clock.epochAt(startedAt));
+function setTag(next: Tag): void {
+  tag = next;
   saveTag(tag, storage);
   renderTag();
   // Redraw the QR on the next frame instead of waiting for the slot to change.
   coarseDirty = true;
   if ('vibrate' in navigator) navigator.vibrate(HOLD_VIBRATE_MS);
-});
+}
+
+const hold = createHoldMachine(HOLD_MS);
+bindHoldInput(hold);
+bindConfirmButton(resetButton, RESET_CONFIRM_MS, (timeStamp) => setTag(resetTag(clock.epochAt(timeStamp))));
 renderTag();
 
 // Match canvas backing stores to device pixels so cell and module edges stay sharp.
@@ -97,6 +105,8 @@ function frame(timestamp: number): void {
 
   drawSweep(sweepCtx, snap.phaseMs);
 
+  const held = hold.update(timestamp);
+  if (held) setTag(nextTag(tag, clock.epochAt(held.startedAt)));
   const progress = hold.progress(timestamp);
   if (progress !== lastProgress) {
     tagProgressEl.style.transform = `scaleX(${progress})`;

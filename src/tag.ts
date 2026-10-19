@@ -5,7 +5,7 @@ export type TagState = 'IDLE' | 'START' | 'STOP';
 
 export type Tag = {
   state: TagState;
-  // Epoch ms when the hold that set this state began; 0 while IDLE.
+  // Epoch ms when the hold that set this state began; 0 if never used.
   eventMs: number;
 };
 
@@ -19,10 +19,15 @@ export function nextTag(current: Tag, eventMs: number): Tag {
   return { state: current.state === 'START' ? 'STOP' : 'START', eventMs: Math.floor(eventMs) };
 }
 
+// Back to IDLE to begin a new recording session.
+export function resetTag(eventMs: number): Tag {
+  return { state: 'IDLE', eventMs: Math.floor(eventMs) };
+}
+
 export function formatTagLabel(tag: Tag, offsetOf: OffsetFn = localOffset): string {
-  if (tag.state === 'IDLE') return `Nhấn giữ ${HOLD_MS / 1000} giây để START`;
+  if (tag.state === 'IDLE') return `Giữ ${HOLD_MS / 1000} giây để START`;
   const time = formatTime(toSnapshot(tag.eventMs, offsetOf));
-  return tag.state === 'START' ? `▶ START · từ ${time}` : `■ STOP · từ ${time}`;
+  return tag.state === 'START' ? `▶ START lúc ${time}` : `■ STOP lúc ${time}`;
 }
 
 // localStorage can be missing or throw (private mode, blocked site data).

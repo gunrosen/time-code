@@ -16,8 +16,10 @@ export const STATUS_REFRESH_MS = 500;
 
 export const CURSOR_HIDE_MS = 3000;
 
-// Task tag: press and hold anywhere this long to toggle START/STOP.
+// Task tag: hold anywhere this long to toggle START/STOP.
 export const HOLD_MS = 1000;
+// "New session" button: a second tap within this window resets the tag to IDLE.
+export const RESET_CONFIRM_MS = 3000;
 export const HOLD_VIBRATE_MS = 60;
 export const TAG_STORAGE_KEY = 'timecode.tag';
 

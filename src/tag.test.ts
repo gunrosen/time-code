@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { IDLE_TAG, formatTagLabel, loadTag, nextTag, saveTag, type Tag } from './tag';
+import { IDLE_TAG, formatTagLabel, loadTag, nextTag, resetTag, saveTag, type Tag } from './tag';
 
 // 2026-10-19T05:30:05.234Z = 12:30:05.2 in UTC+07:00
 const EVENT = Date.UTC(2026, 9, 19, 5, 30, 5, 234);
@@ -26,12 +26,12 @@ describe('nextTag', () => {
 
 describe('formatTagLabel', () => {
   it('shows the prompt while idle', () => {
-    expect(formatTagLabel(IDLE_TAG)).toBe('Nhấn giữ 1 giây để START');
+    expect(formatTagLabel(IDLE_TAG)).toBe('Giữ 1 giây để START');
   });
 
   it('shows state and local event time', () => {
-    expect(formatTagLabel({ state: 'START', eventMs: EVENT }, () => 420)).toBe('▶ START · từ 12:30:05.2');
-    expect(formatTagLabel({ state: 'STOP', eventMs: EVENT }, () => 0)).toBe('■ STOP · từ 05:30:05.2');
+    expect(formatTagLabel({ state: 'START', eventMs: EVENT }, () => 420)).toBe('▶ START lúc 12:30:05.2');
+    expect(formatTagLabel({ state: 'STOP', eventMs: EVENT }, () => 0)).toBe('■ STOP lúc 05:30:05.2');
   });
 });
 
@@ -49,5 +49,14 @@ describe('tag storage', () => {
     for (const raw of ['not json', '{"state":"PAUSE","eventMs":1}', '{"state":"START","eventMs":"x"}']) {
       expect(loadTag({ getItem: () => raw, setItem: () => undefined })).toEqual(IDLE_TAG);
     }
+  });
+});
+
+describe('resetTag', () => {
+  it('returns to IDLE with the reset time and restarts the cycle', () => {
+    const idle = resetTag(EVENT + 0.7);
+    expect(idle).toEqual({ state: 'IDLE', eventMs: EVENT });
+    expect(formatTagLabel(idle)).toBe('Giữ 1 giây để START');
+    expect(nextTag(idle, EVENT + 5000).state).toBe('START');
   });
 });

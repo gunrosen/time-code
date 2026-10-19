@@ -67,3 +67,10 @@ Mỗi video có nhiều task liên tiếp, ví dụ rửa thực phẩm rồi n�
   - Reload trang → trạng thái vẫn còn.
 - Decode QR bằng `jsQR` từ canvas → payload khớp state và `eventMs`. Thu nhỏ QR xuống khoảng 85px (bằng cỡ QR trong video thử 480p) rồi decode lại để chắc v3 vẫn đọc được.
 - Không push khi chưa hỏi user.
+
+## Bổ sung: nút "Session mới" (về IDLE)
+- Cử chỉ chính chỉ làm một việc: giữ đủ 1 giây ở bất kỳ đâu → đổi START ↔ STOP ngay (không chờ thả tay).
+- Về `IDLE` bằng nút riêng `↺ Session mới` ở dòng trên cùng: chạm 1 lần → `Chạm lần nữa để xác nhận` (3 giây, `RESET_CONFIRM_MS`); chạm lần 2 → `IDLE` với `eventMs` = lúc chạm xác nhận.
+- Nút luôn hiện (không tự ẩn) khi trạng thái khác `IDLE`; phần tử có `data-no-hold` không khởi động cử chỉ giữ.
+- Chữ trên dải đổi `từ` → `lúc`; gợi ý IDLE là `Giữ 1 giây để START`.
+- Đã cân nhắc và bỏ phương án "giữ 3 giây để về IDLE": một cử chỉ làm hai việc, khó hiểu khi tay bận.
