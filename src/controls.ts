@@ -1,104 +1,74 @@
-import { CONTROLS_HIDE_MS } from './config';
+import { CURSOR_HIDE_MS } from './config';
 
 export type Controls = {
   isAwake: () => boolean;
+  // False when the browser has no element fullscreen (iPhone Safari).
+  canFullscreen: boolean;
+  isFullscreen: () => boolean;
 };
 
-export function setupControls(fsButton: HTMLButtonElement, wakeButton: HTMLButtonElement): Controls {
-  setupFullscreen(fsButton);
-  const wake = setupWakeLock(wakeButton);
-  setupAutoHide();
-  return { isAwake: wake.isAwake };
+// Fullscreen and keep-awake are always on. Browsers only allow both after a user
+// gesture, so every tap, click or key press re-requests whatever is missing.
+export function setupControls(): Controls {
+  const fullscreen = setupFullscreen();
+  const wake = setupWakeLock();
+  setupIdleCursor();
+  return { isAwake: wake.isAwake, ...fullscreen };
 }
 
-function setupFullscreen(button: HTMLButtonElement): void {
+function setupFullscreen(): Pick<Controls, 'canFullscreen' | 'isFullscreen'> {
   const root = document.documentElement;
-  const enabled = document.fullscreenEnabled || document.webkitFullscreenEnabled === true;
-  if (!enabled) {
-    // iPhone Safari has no element fullscreen.
-    button.hidden = true;
-    return;
-  }
+  const canFullscreen = document.fullscreenEnabled || document.webkitFullscreenEnabled === true;
+  const isFullscreen = () => (document.fullscreenElement ?? document.webkitFullscreenElement ?? null) !== null;
+  if (!canFullscreen) return { canFullscreen, isFullscreen };
 
-  const current = () => document.fullscreenElement ?? document.webkitFullscreenElement ?? null;
-  const toggle = () => {
-    if (current()) {
-      void (document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen?.());
-    } else {
-      void (root.requestFullscreen ? root.requestFullscreen() : root.webkitRequestFullscreen?.());
-    }
+  const enter = (e: Event) => {
+    if (isFullscreen() || (e instanceof KeyboardEvent && e.key === 'Escape')) return;
+    const request = root.requestFullscreen?.bind(root) ?? root.webkitRequestFullscreen?.bind(root);
+    // Rejects when the browser does not count the event as a user gesture; the next one retries.
+    void Promise.resolve(request?.()).catch(() => undefined);
   };
-  const sync = () => {
-    const on = current() !== null;
-    button.setAttribute('aria-pressed', String(on));
-    button.textContent = on ? 'Thoát toàn màn hình' : 'Toàn màn hình';
-  };
-
-  button.addEventListener('click', toggle);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'f' || e.key === 'F') toggle();
-  });
-  document.addEventListener('fullscreenchange', sync);
-  document.addEventListener('webkitfullscreenchange', sync);
-  sync();
+  document.addEventListener('click', enter);
+  document.addEventListener('keydown', enter);
+  return { canFullscreen, isFullscreen };
 }
 
-// Keep-awake is wanted by default. Browsers may refuse it until the first user
-// gesture, so it is retried on interaction and when the tab becomes visible.
-function setupWakeLock(button: HTMLButtonElement): { isAwake: () => boolean } {
-  if (!('wakeLock' in navigator)) {
-    button.hidden = true;
-    return { isAwake: () => false };
-  }
+function setupWakeLock(): { isAwake: () => boolean } {
+  if (!('wakeLock' in navigator)) return { isAwake: () => false };
 
-  let wanted = true;
   let sentinel: WakeLockSentinel | null = null;
-
-  const sync = () => {
-    const on = sentinel !== null;
-    button.setAttribute('aria-pressed', String(on));
-    button.textContent = on ? 'Đang giữ sáng' : 'Giữ màn hình sáng';
-  };
+  let pending = false;
 
   const acquire = async () => {
-    if (!wanted || sentinel || document.visibilityState !== 'visible') return;
+    if (sentinel || pending || document.visibilityState !== 'visible') return;
+    pending = true;
     try {
       const lock = await navigator.wakeLock.request('screen');
       sentinel = lock;
+      // The browser releases the lock when the tab is hidden; it is re-acquired on return.
       lock.addEventListener('release', () => {
         if (sentinel === lock) sentinel = null;
-        sync();
       });
     } catch {
       sentinel = null;
+    } finally {
+      pending = false;
     }
-    sync();
   };
 
-  button.addEventListener('click', () => {
-    if (sentinel) {
-      wanted = false;
-      void sentinel.release();
-    } else {
-      wanted = true;
-      void acquire();
-    }
-  });
   document.addEventListener('visibilitychange', () => void acquire());
   document.addEventListener('pointerdown', () => void acquire());
   document.addEventListener('keydown', () => void acquire());
-
-  sync();
   void acquire();
   return { isAwake: () => sentinel !== null };
 }
 
-function setupAutoHide(): void {
+function setupIdleCursor(): void {
   let timer = 0;
   const wake = () => {
     document.body.classList.remove('idle');
     window.clearTimeout(timer);
-    timer = window.setTimeout(() => document.body.classList.add('idle'), CONTROLS_HIDE_MS);
+    timer = window.setTimeout(() => document.body.classList.add('idle'), CURSOR_HIDE_MS);
   };
   for (const type of ['pointermove', 'pointerdown', 'keydown'] as const) {
     document.addEventListener(type, wake);

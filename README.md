@@ -5,7 +5,7 @@ Trang web hiển thị time-code lớn để **nhiều camera cùng quay vào m�
 ## Dùng nhanh
 
 1. Mở trang (GitHub Pages) trên một màn hình ≥ 60Hz: laptop, tablet, TV hoặc điện thoại.
-2. Bấm **Toàn màn hình** (hoặc phím `F`). Trang tự xin **giữ màn hình sáng**; nếu nút chưa xanh thì chạm vào màn hình một lần.
+2. **Chạm/click vào màn hình một lần** (hoặc bấm phím bất kỳ). Trang sẽ vào toàn màn hình và giữ màn hình luôn sáng. Trình duyệt bắt buộc phải có một thao tác của người dùng mới cho phép hai việc này. Nếu thoát toàn màn hình, chạm lại một lần là trang vào lại. Dòng trạng thái hiện `● giữ sáng` khi màn hình đang được giữ sáng, và hiện `chạm để toàn màn hình` khi chưa ở chế độ toàn màn hình. iPhone không hỗ trợ toàn màn hình cho trang web.
 3. Bắt đầu quay cả 3 camera, rồi chĩa từng camera (hoặc cả 3 cùng lúc) vào màn hình vài giây.
 4. Nhìn dòng trạng thái góc trên: nó phải hiện `60 Hz` (hoặc cao hơn) và **không chuyển đỏ** trong lúc quay. Màu đỏ nghĩa là trình duyệt vừa rớt frame; khi đó nên quay lại đoạn mốc.
 

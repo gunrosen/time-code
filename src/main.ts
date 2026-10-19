@@ -26,7 +26,7 @@ const sweepCtx = context(byId('sweep', HTMLCanvasElement));
 const stripCtx = context(byId('strip', HTMLCanvasElement));
 const qrCtx = context(byId('qr', HTMLCanvasElement));
 
-const controls = setupControls(byId('fs', HTMLButtonElement), byId('wake', HTMLButtonElement));
+const controls = setupControls();
 const clock = createClock();
 const stats = createFrameStats();
 
@@ -76,6 +76,7 @@ function frame(timestamp: number): void {
   if (timestamp - lastStatusAt >= STATUS_REFRESH_MS) {
     const parts = [`${stats.hz()} Hz`, `rớt ${stats.dropped()} frame`];
     if (controls.isAwake()) parts.push('● giữ sáng');
+    if (controls.canFullscreen && !controls.isFullscreen()) parts.push('chạm để toàn màn hình');
     statusEl.textContent = parts.join(' · ');
     statusEl.classList.toggle('warn', stats.recentDrop(timestamp));
     lastStatusAt = timestamp;
