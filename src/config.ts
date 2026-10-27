@@ -2,7 +2,7 @@
 export const SLOT_MS = 100;
 // Enough bits for every slot in a day (86_400_000 / SLOT_MS = 864_000 < 2^20).
 export const GRAY_BITS = 20;
-export const QR_PREFIX = 'TC3';
+export const QR_PREFIX = 'TC4';
 // Fixed QR version keeps the module grid size stable across payloads.
 export const QR_VERSION = 3;
 export const QR_QUIET_ZONE = 4;
@@ -22,6 +22,9 @@ export const HOLD_MS = 1000;
 export const RESET_CONFIRM_MS = 3000;
 export const HOLD_VIBRATE_MS = 60;
 export const TAG_STORAGE_KEY = 'timecode.tag';
+export const TASK_STORAGE_KEY = 'timecode.task';
+// QR task field while no task is selected (only possible in IDLE).
+export const NO_TASK = '-';
 
 export const MS_PER_DAY = 86_400_000;
 export const MS_PER_MINUTE = 60_000;

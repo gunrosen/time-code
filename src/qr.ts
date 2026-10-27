@@ -1,12 +1,12 @@
 import QRCode from 'qrcode';
-import { QR_PREFIX, QR_QUIET_ZONE, QR_VERSION } from './config';
+import { NO_TASK, QR_PREFIX, QR_QUIET_ZONE, QR_VERSION } from './config';
 import type { Tag } from './tag';
 
 export type Qr = ReturnType<typeof QRCode.create>;
 
 // Only QR alphanumeric characters (0-9 A-Z : -), so the payload fits version 3.
-export function buildPayload(slotStartMs: number, tzOffsetMin: number, tag: Tag): string {
-  return `${QR_PREFIX}:${slotStartMs}:${tzOffsetMin}:${tag.state}:${tag.eventMs}`;
+export function buildPayload(slotStartMs: number, tzOffsetMin: number, tag: Tag, taskCode: string | null): string {
+  return `${QR_PREFIX}:${slotStartMs}:${tzOffsetMin}:${tag.state}:${tag.eventMs}:${taskCode ?? NO_TASK}`;
 }
 
 export function buildQr(payload: string): Qr {
