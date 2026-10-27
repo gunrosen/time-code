@@ -15,8 +15,13 @@
         <span id="date"></span>
         <span id="tz"></span>
         <span id="status"></span>
+        <button id="change-task" type="button" data-no-hold>Đổi task</button>
         <button id="reset" type="button" data-no-hold hidden>↺ Session mới</button>
       </header>
+      <div id="task">
+        <span id="task-code">—</span>
+        <span id="task-name">Chưa chọn task</span>
+      </div>
       <div id="tag" data-state="IDLE">
         <div id="tag-progress"></div>
         <span id="tag-label">Giữ 1 giây để START</span>
@@ -26,6 +31,23 @@
       <div class="cell" id="strip-cell"><canvas id="strip" aria-label="Dải mã Gray"></canvas></div>
       <div class="cell" id="qr-cell"><canvas id="qr" aria-label="QR thời gian"></canvas></div>
     </main>
+    <section id="picker" data-no-hold data-no-fullscreen hidden aria-label="Chọn task">
+      <header id="picker-head">
+        <h1 id="picker-title">Chọn task</h1>
+        <input id="picker-search" type="search" placeholder="Tìm mã hoặc tên task…" autocomplete="off" />
+        <button id="picker-close" class="picker-button" type="button" hidden>Đóng</button>
+      </header>
+      <div id="picker-list" class="picker-scroll"></div>
+      <div id="picker-detail" hidden>
+        <div id="picker-detail-head">
+          <button id="picker-back" class="picker-button" type="button">← Danh sách</button>
+          <div id="picker-detail-code"></div>
+          <div id="picker-detail-name"></div>
+          <button id="picker-select" type="button">Chọn task này</button>
+        </div>
+        <div id="picker-steps"></div>
+      </div>
+    </section>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

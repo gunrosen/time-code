@@ -1,5 +1,9 @@
 import { CURSOR_HIDE_MS } from './config';
 
+// Taps inside elements marked data-no-fullscreen (the task picker) do not enter fullscreen,
+// so the time-code screen itself still shows the hint and takes the first tap.
+const NO_FULLSCREEN = '[data-no-fullscreen]';
+
 export type Controls = {
   isAwake: () => boolean;
   // False when the browser has no element fullscreen (iPhone Safari).
@@ -24,6 +28,7 @@ function setupFullscreen(): Pick<Controls, 'canFullscreen' | 'isFullscreen'> {
 
   const enter = (e: Event) => {
     if (isFullscreen() || (e instanceof KeyboardEvent && e.key === 'Escape')) return;
+    if (e.target instanceof Element && e.target.closest(NO_FULLSCREEN)) return;
     const request = root.requestFullscreen?.bind(root) ?? root.webkitRequestFullscreen?.bind(root);
     // Rejects when the browser does not count the event as a user gesture; the next one retries.
     void Promise.resolve(request?.()).catch(() => undefined);

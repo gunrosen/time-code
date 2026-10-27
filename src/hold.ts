@@ -65,6 +65,8 @@ export function bindHoldInput(machine: HoldMachine): void {
 
   document.addEventListener('keydown', (e) => {
     if (e.code !== 'Space') return;
+    // Space typed into the task search box (inside data-no-hold) is not a hold.
+    if (e.target instanceof Element && e.target.closest(NO_HOLD)) return;
     e.preventDefault();
     if (!e.repeat) machine.press(e.timeStamp);
   });

@@ -3,11 +3,13 @@ import { HOLD_MS, HOLD_VIBRATE_MS, RESET_CONFIRM_MS, STATUS_REFRESH_MS } from '.
 import { bindConfirmButton } from './confirm';
 import { setupControls } from './controls';
 import { bindHoldInput, createHoldMachine } from './hold';
+import { createPicker } from './picker';
 import { buildPayload, buildQr, drawQr } from './qr';
 import { createFrameStats } from './stats';
 import { drawStrip } from './strip';
 import { drawSweep } from './sweep';
 import { browserStorage, formatTagLabel, loadTag, nextTag, resetTag, saveTag, type Tag } from './tag';
+import { findTask, loadTaskCode, saveTaskCode, type Task } from './tasks';
 
 function byId<T extends HTMLElement>(id: string, type: { new (): T; prototype: T }): T {
   const el = document.getElementById(id);
@@ -28,6 +30,9 @@ const statusEl = byId('status', HTMLElement);
 const tagEl = byId('tag', HTMLElement);
 const tagLabelEl = byId('tag-label', HTMLElement);
 const tagProgressEl = byId('tag-progress', HTMLElement);
+const taskCodeEl = byId('task-code', HTMLElement);
+const taskNameEl = byId('task-name', HTMLElement);
+const changeTaskButton = byId('change-task', HTMLButtonElement);
 const resetButton = byId('reset', HTMLButtonElement);
 const sweepCtx = context(byId('sweep', HTMLCanvasElement));
 const stripCtx = context(byId('strip', HTMLCanvasElement));
@@ -44,12 +49,20 @@ let lastProgress = -1;
 
 const storage = browserStorage();
 let tag = loadTag(storage);
+let task = findTask(loadTaskCode(storage));
 
 function renderTag(): void {
   tagEl.dataset.state = tag.state;
-  tagLabelEl.textContent = formatTagLabel(tag);
+  tagLabelEl.textContent = formatTagLabel(tag, undefined, task !== null);
   // Nothing to reset while already IDLE.
   resetButton.hidden = tag.state === 'IDLE';
+  // The task is fixed while a task is running; STOP first to change it.
+  changeTaskButton.hidden = tag.state === 'START';
+}
+
+function renderTask(): void {
+  taskCodeEl.textContent = task?.code ?? '—';
+  taskNameEl.textContent = task?.name ?? 'Chưa chọn task';
 }
 
 function setTag(next: Tag): void {
@@ -61,10 +74,44 @@ function setTag(next: Tag): void {
   if ('vibrate' in navigator) navigator.vibrate(HOLD_VIBRATE_MS);
 }
 
+function setTask(next: Task | null): void {
+  task = next;
+  saveTaskCode(task?.code ?? null, storage);
+  renderTask();
+  renderTag();
+  coarseDirty = true;
+}
+
+const picker = createPicker(
+  {
+    root: byId('picker', HTMLElement),
+    search: byId('picker-search', HTMLInputElement),
+    closeButton: byId('picker-close', HTMLButtonElement),
+    list: byId('picker-list', HTMLElement),
+    detail: byId('picker-detail', HTMLElement),
+    backButton: byId('picker-back', HTMLButtonElement),
+    detailCode: byId('picker-detail-code', HTMLElement),
+    detailName: byId('picker-detail-name', HTMLElement),
+    steps: byId('picker-steps', HTMLElement),
+    selectButton: byId('picker-select', HTMLButtonElement),
+  },
+  setTask,
+);
+
 const hold = createHoldMachine(HOLD_MS);
 bindHoldInput(hold);
-bindConfirmButton(resetButton, RESET_CONFIRM_MS, (timeStamp) => setTag(resetTag(clock.epochAt(timeStamp))));
+bindConfirmButton(resetButton, RESET_CONFIRM_MS, (timeStamp) => {
+  // A new session starts by picking its task again; the old one stays highlighted.
+  setTag(resetTag(clock.epochAt(timeStamp)));
+  const previous = task;
+  setTask(null);
+  picker.open({ closable: false, current: previous });
+});
+changeTaskButton.addEventListener('click', () => picker.open({ closable: true, current: task }));
+renderTask();
 renderTag();
+// Picking a task is mandatory before the first START.
+if (!task) picker.open({ closable: false, current: null });
 
 // Match canvas backing stores to device pixels so cell and module edges stay sharp.
 const resizer = new ResizeObserver(() => {
@@ -98,7 +145,7 @@ function frame(timestamp: number): void {
     dateEl.textContent = formatDate(snap);
     tzEl.textContent = `${formatOffset(snap.tzOffsetMin)} ${timeZoneName()}`;
     drawStrip(stripCtx, snap.slotOfDay);
-    drawQr(qrCtx, buildQr(buildPayload(snap.slotStartMs, snap.tzOffsetMin, tag)));
+    drawQr(qrCtx, buildQr(buildPayload(snap.slotStartMs, snap.tzOffsetMin, tag, task?.code ?? null)));
     lastSlot = snap.slot;
     coarseDirty = false;
   }
@@ -106,8 +153,12 @@ function frame(timestamp: number): void {
   drawSweep(sweepCtx, snap.phaseMs);
 
   const held = hold.update(timestamp);
-  if (held) setTag(nextTag(tag, clock.epochAt(held.startedAt)));
-  const progress = hold.progress(timestamp);
+  if (held) {
+    // The overlay carries data-no-hold, so a hold without a task only happens from the keyboard.
+    if (task) setTag(nextTag(tag, clock.epochAt(held.startedAt)));
+    else picker.open({ closable: false, current: null });
+  }
+  const progress = task ? hold.progress(timestamp) : 0;
   if (progress !== lastProgress) {
     tagProgressEl.style.transform = `scaleX(${progress})`;
     lastProgress = progress;
