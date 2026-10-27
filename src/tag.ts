@@ -9,7 +9,7 @@ export type Tag = {
   eventMs: number;
 };
 
-export type TagStorage = Pick<Storage, 'getItem' | 'setItem'>;
+export type TagStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 export const IDLE_TAG: Tag = { state: 'IDLE', eventMs: 0 };
 
@@ -24,8 +24,8 @@ export function resetTag(eventMs: number): Tag {
   return { state: 'IDLE', eventMs: Math.floor(eventMs) };
 }
 
-export function formatTagLabel(tag: Tag, offsetOf: OffsetFn = localOffset): string {
-  if (tag.state === 'IDLE') return `Giữ ${HOLD_MS / 1000} giây để START`;
+export function formatTagLabel(tag: Tag, offsetOf: OffsetFn = localOffset, hasTask = true): string {
+  if (tag.state === 'IDLE') return hasTask ? `Giữ ${HOLD_MS / 1000} giây để START` : 'Chọn task để bắt đầu';
   const time = formatTime(toSnapshot(tag.eventMs, offsetOf));
   return tag.state === 'START' ? `▶ START lúc ${time}` : `■ STOP lúc ${time}`;
 }

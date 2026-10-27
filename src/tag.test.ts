@@ -11,6 +11,9 @@ function memoryStorage() {
     setItem: (key: string, value: string) => {
       data[key] = value;
     },
+    removeItem: (key: string) => {
+      delete data[key];
+    },
   };
 }
 
@@ -25,8 +28,10 @@ describe('nextTag', () => {
 });
 
 describe('formatTagLabel', () => {
-  it('shows the prompt while idle', () => {
+  it('shows the prompt while idle, or asks for a task first', () => {
     expect(formatTagLabel(IDLE_TAG)).toBe('Giữ 1 giây để START');
+    expect(formatTagLabel(IDLE_TAG, undefined, false)).toBe('Chọn task để bắt đầu');
+    expect(formatTagLabel({ state: 'STOP', eventMs: EVENT }, () => 420, false)).toBe('■ STOP lúc 12:30:05.2');
   });
 
   it('shows state and local event time', () => {
@@ -47,7 +52,7 @@ describe('tag storage', () => {
     expect(loadTag(memoryStorage())).toEqual(IDLE_TAG);
     expect(loadTag(null)).toEqual(IDLE_TAG);
     for (const raw of ['not json', '{"state":"PAUSE","eventMs":1}', '{"state":"START","eventMs":"x"}']) {
-      expect(loadTag({ getItem: () => raw, setItem: () => undefined })).toEqual(IDLE_TAG);
+      expect(loadTag({ getItem: () => raw, setItem: () => undefined, removeItem: () => undefined })).toEqual(IDLE_TAG);
     }
   });
 });
