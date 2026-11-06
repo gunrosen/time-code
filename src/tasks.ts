@@ -8,6 +8,7 @@ export type Step = {
   nameVi: string;
   nameEn: string | null;
   description: string;
+  descriptionEn: string | null;
   props: string[];
   wristcamNote: string | null;
 };
