@@ -19,7 +19,7 @@ Trang web hiển thị time-code lớn để **nhiều camera cùng quay vào m�
 
 | Phần tử | Đổi khi nào | Dùng để |
 |---|---|---|
-| Dòng mã task (`V22` + tên) | Khi chọn task | Người và camera biết phiên này quay task nào |
+| Dòng mã task (`M03` + tên) | Khi chọn task | Người và camera biết phiên này quay task nào |
 | Dải tag `START`/`STOP` (xanh lá/đỏ) | Khi nhấn giữ 1 giây | Đánh dấu task bắt đầu/kết thúc |
 | Số to `HH:MM:SS.d` | Mỗi 100ms (một *slot*) | Người đọc giờ của slot |
 | Thước quét 0–99ms (vạch vàng) | Mỗi lần màn hình làm tươi | Đọc mili-giây trong slot |
@@ -30,15 +30,15 @@ Giờ hiển thị là giờ của máy đang mở trang, theo múi giờ của 
 
 ## Chọn task
 
-Mỗi phiên quay làm **một task** (một "mã vòng" `V01`…`V76` trong kịch bản hiện trường, gồm 5 bước lặp nhiều lần). Phải chọn task trước khi `START`:
+Mỗi phiên quay làm **một task** (một trong 43 task Micky `M01`…`M43`, gồm 5 bước lặp nhiều lần). Phải chọn task trước khi `START`:
 
-1. Mở trang lần đầu (hoặc sau `↺ Session mới`) thì màn hình **Chọn task** phủ toàn bộ, không có nút đóng. Gõ mã hoặc tên để lọc (không dấu cũng được, ví dụ `phong bi` ra `V22`), chạm một task để xem 5 bước (tên VI/EN, mô tả, đạo cụ, lưu ý wristcam), rồi chạm `Chọn V22`.
+1. Mở trang lần đầu (hoặc sau `↺ Session mới`) thì màn hình **Chọn task** phủ toàn bộ, không có nút đóng. Gõ mã hoặc tên để lọc (không dấu cũng được, ví dụ `phong bi` ra `M03`), chạm một task để xem 5 bước (tên VI/EN, mô tả VI/EN), rồi chạm `Chọn M03`.
 2. Mã và tên task hiện ngay trên dải START/STOP. Mã cỡ to để camera có thể đọc được cả khi QR quá nhỏ.
 3. `Đổi task` ở dòng trên cùng mở lại màn hình chọn (lúc này có nút `Đóng`). Nút ẩn khi đang `START`: phải `STOP` trước rồi mới đổi task. Một video có thể chứa nhiều task nối tiếp: `STOP` → `Đổi task` → `START`.
 4. `↺ Session mới` vừa đưa dải về `IDLE` vừa **xóa task** và mở lại màn hình chọn; task cũ được đánh dấu sẵn để chọn lại bằng một chạm.
 5. Task đã chọn được lưu trên trình duyệt (`localStorage`) như tag, reload không mất.
 
-Danh sách task nằm trong `src/tasks.json`, sinh bằng `python3 scripts/build_tasks.py` từ hai file trong `ref/` (`KichBan-HienTruong.csv` là nguồn chính; `[MICKY] Master.xlsx - 1. PLAN.csv` bổ sung các nhóm chưa có mã vòng, được gán mã `P01`…). Đầu danh sách có `OTHER` (`Khác - không có mã việc phù hợp`, không có bước) cho phiên quay không khớp task nào. Mã task chỉ dùng ký tự `0-9 A-Z -` và dài tối đa 8 ký tự để vừa QR. Mỗi task có `code`, `name`, `section`, `sources`, `variantOf` và 5 `steps` (`code` dạng `V22-3`, `order`, `nameVi`, `nameEn`, `description`, `props`, `wristcamNote`). Sửa CSV xong chạy lại script; `--check` báo lỗi khi JSON cũ.
+Danh sách task nằm trong `src/tasks.json`, sinh bằng `python3 scripts/build_tasks.py` (cần `openpyxl`) từ sheet `Tiếng Anh` của `ref/MICKY - TASK NAME & DESCRIPTION.xlsx`. Mỗi task bắt đầu ở dòng bước 1; mã `M01`…`M43` theo thứ tự trong sheet. Sheet không có tên task và môi trường, nên hai thông tin này nằm trong bảng `TASKS` của script (môi trường lấy từ cột "Môi trường" của sheet `Bản sao của 1. PLAN`); script báo lỗi nếu bước 1 của sheet không khớp bảng. Tên/mô tả tiếng Việt lấy từ cột `Task TV`/`Description TV` (bản Google Translate trong sheet). Bước có hai phương án (bước 5 của `M02`: túi khóa kéo / túi nhựa) được gộp thành một bước, nối bằng ` / `. Bộ task cũ (`V01`…`V76`, `P01`…`P21`) đã bỏ. Đầu danh sách có `OTHER` (`Khác - không có mã việc phù hợp`, không có bước) cho phiên quay không khớp task nào. Mã task chỉ dùng ký tự `0-9 A-Z -` và dài tối đa 8 ký tự để vừa QR. Mỗi task có `code`, `name`, `section` (`home` = Nhà, `industrial`), `sources`, `variantOf` và 5 `steps` (`code` dạng `M03-3`, `order`, `nameVi`, `nameEn`, `description` (VI), `descriptionEn`, `props`, `wristcamNote`; hai trường cuối hiện để trống vì file mới không có). Sửa xlsx xong chạy lại script; `--check` báo lỗi khi JSON cũ.
 
 **Vì sao chia hai lớp:** camera để auto-exposure trong nhà thường phơi sáng khoảng 1/30s, tức mỗi frame video "chụp dính" 2–3 lần đổi hình của màn hình. Phần thô (số, Gray, QR) đứng yên trong 100ms, nên mỗi slot luôn có frame sạch. Phần mịn là vạch vàng chạy liên tục: khi phơi sáng dài, vạch nhòe thành một vệt, và **tâm vệt chính là thời điểm giữa lúc phơi sáng** của frame đó.
 
@@ -90,12 +90,12 @@ Frame dùng để đồng bộ thường là đoạn nhìn màn hình lúc `STAR
 ## Spec cho máy đọc
 
 ### QR
-- Payload: `TC4:<slotStartEpochMs>:<tzOffsetMin>:<STATE>:<eventMs>:<TASK>`, ví dụ `TC4:1792390619900:420:START:1792390618496:V22`.
+- Payload: `TC4:<slotStartEpochMs>:<tzOffsetMin>:<STATE>:<eventMs>:<TASK>`, ví dụ `TC4:1792390619900:420:START:1792390618496:M03`.
   - `slotStartEpochMs`: Unix epoch (ms, UTC) của đầu slot, luôn là bội số của 100.
   - `tzOffsetMin`: độ lệch múi giờ của trình duyệt so với UTC, tính bằng phút, dương ở phía đông (UTC+07:00 = `420`).
   - `STATE`: `IDLE` (chưa đánh dấu lần nào), `START` hoặc `STOP`.
   - `eventMs`: Unix epoch (ms, UTC) lúc bắt đầu nhấn giữ để vào `STATE` hiện tại. Với `IDLE`: `0` nếu chưa từng đánh dấu trên trình duyệt này, khác `0` là lúc reset về session mới.
-  - `TASK`: mã task đang chọn (`code` trong `src/tasks.json`, ví dụ `V22`, `P03`), hoặc `-` khi chưa chọn (chỉ gặp khi `IDLE`).
+  - `TASK`: mã task đang chọn (`code` trong `src/tasks.json`, ví dụ `M03`), hoặc `-` khi chưa chọn (chỉ gặp khi `IDLE`).
 - Bản cũ `TC3:…` có 5 trường, không có `TASK`. Máy đọc nên nhận cả hai theo prefix.
 - QR version 3 (29×29 module), mức sửa lỗi M, quiet zone 4 module, module đen trên nền trắng. Payload chỉ dùng ký tự alphanumeric của QR (`0-9 A-Z : -`); dài nhất 50 ký tự, dưới giới hạn 61 của v3-M.
 

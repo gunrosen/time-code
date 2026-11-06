@@ -18,22 +18,30 @@ function memoryStorage() {
 
 const SAMPLE: Task[] = [
   {
-    code: 'V22',
-    name: 'Thư từ - chuẩn bị bộ gửi',
-    section: 'general',
-    sources: ['kichban'],
+    code: 'M03',
+    name: 'Phong bì - gấp thư, cho vào và buộc dây',
+    section: 'home',
+    sources: ['micky'],
     variantOf: null,
     steps: [
-      { code: 'V22-1', order: 1, nameVi: 'Gấp tài liệu', nameEn: 'Fold letters', description: '', props: [], wristcamNote: null },
+      {
+        code: 'M03-1', order: 1, nameVi: 'Gấp thư', nameEn: 'Fold letters', description: '', descriptionEn: null,
+        props: [], wristcamNote: null,
+      },
     ],
   },
   {
-    code: 'P02',
-    name: 'Bột - rây và chia hộp',
-    section: 'plan',
-    sources: ['plan'],
+    code: 'M07',
+    name: 'Bột mì - rây và chia hộp',
+    section: 'home',
+    sources: ['micky'],
     variantOf: null,
-    steps: [{ code: 'P02-1', order: 1, nameVi: 'Cho bột vào rây', nameEn: null, description: '', props: [], wristcamNote: null }],
+    steps: [
+      {
+        code: 'M07-1', order: 1, nameVi: 'Cho bột vào rây', nameEn: null, description: '', descriptionEn: null,
+        props: [], wristcamNote: null,
+      },
+    ],
   },
 ];
 
@@ -58,10 +66,13 @@ describe('catalog', () => {
     expect(SECTIONS[0]?.id).toBe(TASKS[0]?.section);
   });
 
-  it('keeps the KichBan rounds and the plan-only tasks', () => {
-    expect(findTask('V22')?.name).toBe('Thư từ - chuẩn bị bộ gửi');
-    expect(findTask('V76')).not.toBeNull();
-    expect(findTask('P01')?.variantOf).toBe('V04');
+  it('holds the 43 Micky tasks M01..M43 and nothing from the old lists', () => {
+    const codes = TASKS.filter((t) => t.code !== OTHER_CODE).map((t) => t.code).sort();
+    expect(codes).toEqual(Array.from({ length: 43 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`));
+    expect(findTask('M03')?.steps[0]?.nameEn).toBe('Fold Letters to Fit Envelopes');
+    expect(findTask('M02')?.steps[4]?.nameEn).toContain(' / ');
+    expect(findTask('V22')).toBeNull();
+    expect(findTask('P01')).toBeNull();
     expect(findTask('nope')).toBeNull();
   });
 
@@ -77,11 +88,11 @@ describe('catalog', () => {
 describe('filterTasks', () => {
   it('matches code, name and step names without diacritics', () => {
     expect(fold('Thư từ Đ')).toBe('thu tu d');
-    expect(filterTasks('', SAMPLE).map((t) => t.code)).toEqual(['V22', 'P02']);
-    expect(filterTasks('v22', SAMPLE).map((t) => t.code)).toEqual(['V22']);
-    expect(filterTasks('thu tu', SAMPLE).map((t) => t.code)).toEqual(['V22']);
-    expect(filterTasks('fold letters', SAMPLE).map((t) => t.code)).toEqual(['V22']);
-    expect(filterTasks('bot ray', SAMPLE).map((t) => t.code)).toEqual(['P02']);
+    expect(filterTasks('', SAMPLE).map((t) => t.code)).toEqual(['M03', 'M07']);
+    expect(filterTasks('m03', SAMPLE).map((t) => t.code)).toEqual(['M03']);
+    expect(filterTasks('phong bi', SAMPLE).map((t) => t.code)).toEqual(['M03']);
+    expect(filterTasks('fold letters', SAMPLE).map((t) => t.code)).toEqual(['M03']);
+    expect(filterTasks('bot ray', SAMPLE).map((t) => t.code)).toEqual(['M07']);
     expect(filterTasks('xyz', SAMPLE)).toEqual([]);
   });
 });
@@ -89,11 +100,11 @@ describe('filterTasks', () => {
 describe('task storage', () => {
   it('round-trips a known code and drops unknown or cleared ones', () => {
     const storage = memoryStorage();
-    saveTaskCode('V22', storage);
-    expect(loadTaskCode(storage, SAMPLE)).toBe('V22');
+    saveTaskCode('M03', storage);
+    expect(loadTaskCode(storage, SAMPLE)).toBe('M03');
     saveTaskCode(null, storage);
     expect(loadTaskCode(storage, SAMPLE)).toBeNull();
-    storage.setItem('timecode.task', 'V99');
+    storage.setItem('timecode.task', 'V22');
     expect(loadTaskCode(storage, SAMPLE)).toBeNull();
     expect(loadTaskCode(null, SAMPLE)).toBeNull();
   });

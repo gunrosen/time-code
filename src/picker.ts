@@ -67,6 +67,7 @@ export function createPicker(elements: Elements, onSelect: (task: Task) => void)
         item.append(el('span', 'step-no', String(step.order)), el('b', '', step.nameVi));
         if (step.nameEn) item.append(el('i', '', step.nameEn));
         if (step.description) item.append(el('p', '', step.description));
+        if (step.descriptionEn) item.append(el('p', 'en', step.descriptionEn));
         if (step.props.length) item.append(el('small', '', `Đạo cụ: ${step.props.join(', ')}`));
         if (step.wristcamNote) item.append(el('small', 'note', `Wristcam: ${step.wristcamNote}`));
         return item;

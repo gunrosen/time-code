@@ -390,6 +390,11 @@ body.idle {
   margin: 0.4em 0;
 }
 
+.step p.en {
+  color: var(--dim);
+  font-style: italic;
+}
+
 .step small {
   display: block;
   color: var(--dim);
